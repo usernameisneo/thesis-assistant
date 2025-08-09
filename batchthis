@@ -1,0 +1,627 @@
+Below are the exact contents for every required file. Create these files with the given paths and paste the corresponding code. Order: create folders, then files, then commit.
+
+1) index.html (root)
+
+
+
+  
+  Thesis Assistant
+  
+  
+  
+
+
+  
+    Thesis Assistant
+    
+      Declutter
+      Import
+      Export
+      New Project
+    
+  
+
+  
+    
+      
+        Projects
+        
+      
+      
+        Summary
+        Coverage: 0%
+        
+      
+      
+        Filters
+        
+           Backlog
+           In Progress
+           Blocked
+           Done
+        
+      
+    
+
+    
+      
+        
+        
+          Add Theme
+          Add Milestone
+          Add Task
+          Add Source
+          Add Artifact
+        
+      
+
+      
+        
+          Backlog
+          
+        
+        
+          In Progress
+          
+        
+        
+          Blocked
+          
+        
+        
+          Done
+          
+        
+      
+
+      
+    
+  
+
+  
+
+  
+    
+      
+        
+        
+          Link
+          Edit
+          Archive
+          Delete
+        
+      
+      
+        
+          
+            Task
+            Theme
+            Integration
+            Milestone
+          
+          
+          
+            LowMedHighCrit
+          
+        
+        
+        
+          Sources:
+          Artifacts:
+          Depends on:
+        
+      
+      
+         Mark Done
+        
+      
+    
+  
+
+  
+  
+  
+  
+  
+  
+  
+
+
+
+2) assets/css/styles.css
+:root {
+  --bg:#0b0d12; --panel:#121520; --muted:#1a1f2d; --text:#e6e9f0; --sub:#9aa3b2;
+  --accent:#5eead4; --accent2:#93c5fd; --danger:#f87171; --ok:#86efac; --warn:#fde047;
+  --border:#22283a;
+}
+* { box-sizing:border-box; }
+html,body { height:100%; }
+body { margin:0; background:var(--bg); color:var(--text); font:14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell; }
+.app-header { display:flex; align-items:center; justify-content:space-between; padding:10px 16px; border-bottom:1px solid var(--border); background:var(--panel); position:sticky; top:0; z-index:3; }
+.brand { font-weight:700; letter-spacing:.3px; }
+.top-actions button { margin-left:8px; }
+.app-container { display:grid; grid-template-columns: 280px 1fr; min-height:calc(100vh - 52px); }
+.sidebar { border-right:1px solid var(--border); background:var(--panel); padding:12px; overflow:auto; }
+.section { margin-bottom:18px; }
+.section-title { font-weight:600; color:var(--sub); margin-bottom:8px; }
+.nav-list { list-style:none; margin:0; padding:0; }
+.nav-list li { padding:6px 8px; border-radius:6px; cursor:pointer; }
+.nav-list li.active { background:var(--muted); }
+.main { padding:12px; overflow:auto; }
+.toolbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.board { display:grid; grid-template-columns: repeat(4, minmax(240px,1fr)); gap:12px; }
+.column { background:var(--panel); border:1px solid var(--border); border-radius:10px; min-height:300px; display:flex; flex-direction:column; }
+.column-title { padding:10px; border-bottom:1px solid var(--border); color:var(--sub); font-weight:600; }
+.column-list { padding:10px; display:grid; gap:10px; }
+.card { background:var(--muted); border:1px solid var(--border); border-radius:10px; padding:8px; display:flex; flex-direction:column; gap:8px; }
+.card-header { display:flex; gap:8px; align-items:center; }
+.card-title { flex:1; background:transparent; color:var(--text); border:none; font-weight:600; outline:none; }
+.card-actions button { margin-left:6px; }
+.card-body .meta { display:flex; gap:8px; flex-wrap:wrap; }
+.card-body .links { display:grid; gap:6px; }
+.links-row { display:flex; gap:6px; align-items:center; }
+.chips { display:flex; gap:6px; flex-wrap:wrap; }
+.chips .chip { background:#0f1422; border:1px solid var(--border); border-radius:999px; padding:2px 8px; font-size:12px; color:var(--sub); }
+.card-footer { display:flex; align-items:center; justify-content:space-between; color:var(--sub); }
+button { background:#1b2233; border:1px solid var(--border); color:var(--text); border-radius:8px; padding:6px 10px; cursor:pointer; }
+button:hover { border-color:#2b334a; }
+input, textarea, select { background:#0f1422; border:1px solid var(--border); color:var(--text); border-radius:8px; padding:6px; }
+.meter { background:#0f1422; border:1px solid var(--border); border-radius:8px; padding:8px; }
+.stats { color:var(--sub); font-size:12px; }
+.detail { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:12px; margin-top:12px; }
+@media (max-width:1100px){ .board { grid-template-columns: repeat(2, minmax(240px,1fr)); } .app-container { grid-template-columns: 1fr; } .sidebar{ order:2; } }
+@media (max-width:600px){ .board { grid-template-columns: 1fr; } .top-actions { display:grid; grid-auto-flow:column; gap:8px; } }
+
+3) assets/js/utils.js
+const uid = (p='id') => `${p}_${Math.random().toString(36).slice(2,10)}${Date.now().toString(36)}`;
+const fmtPct = v => `${Math.round(v*100)}%`;
+const todayISO = () => new Date().toISOString().slice(0,10);
+const debounce = (fn,ms=200)=>{ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms); }; };
+
+4) assets/js/storage.js
+const DB = {
+  keys: { projects:'projects', entities:'entities', audit:'audit', settings:'settings' },
+  async init(){
+    const defaults = { declutter:false, filters:{backlog:true,inprogress:true,blocked:true,done:true} };
+    const s = await idbKeyval.get(this.keys.settings);
+    if(!s) await idbKeyval.set(this.keys.settings, defaults);
+    if(!(await idbKeyval.get(this.keys.projects))) await idbKeyval.set(this.keys.projects, []);
+    if(!(await idbKeyval.get(this.keys.entities))) await idbKeyval.set(this.keys.entities, {});
+    if(!(await idbKeyval.get(this.keys.audit))) await idbKeyval.set(this.keys.audit, []);
+  },
+  async getSettings(){ return idbKeyval.get(this.keys.settings); },
+  async setSettings(v){ return idbKeyval.set(this.keys.settings, v); },
+  async getProjects(){ return idbKeyval.get(this.keys.projects); },
+  async setProjects(v){ return idbKeyval.set(this.keys.projects, v); },
+  async getEntities(){ return idbKeyval.get(this.keys.entities); },
+  async setEntities(v){ return idbKeyval.set(this.keys.entities, v); },
+  async addAudit(entry){ const a = await idbKeyval.get(this.keys.audit); a.push(entry); await idbKeyval.set(this.keys.audit,a); },
+  async getAudit(){ return idbKeyval.get(this.keys.audit); }
+};
+
+5) assets/js/router.js
+const Router = {
+  current: { projectId:null },
+  setProject(id){ this.current.projectId = id; window.history.replaceState({}, '', `#project=${id}`); },
+  getHash(){ return new URLSearchParams(location.hash.slice(1)); },
+  restore(){ const p=this.getHash().get('project'); if(p) this.current.projectId=p; }
+};
+
+6) assets/js/ingest.js
+const Ingest = {
+  worker: null,
+  ensureWorker(){ if(!this.worker){ this.worker = new Worker('assets/workers/ingestWorker.js', { type:'module' }); } },
+  async addSource(projectId, input){
+    this.ensureWorker();
+    const id = uid('src');
+    const record = { id, projectId, type:'unknown', url:null, title:'', text:'', meta:{}, hash:null, createdAt: Date.now() };
+    await Sources.save(record);
+    this.worker.postMessage({ action:'ingest', sourceId:id, input });
+  }
+};
+
+7) assets/js/export.js
+const Exporter = {
+  async bundle(){
+    const [projects, entities, audit, settings] = await Promise.all([
+      DB.getProjects(), DB.getEntities(), DB.getAudit(), DB.getSettings()
+    ]);
+    return { version:'1.0.0', exportedAt: new Date().toISOString(), projects, entities, audit, settings };
+  },
+  async downloadJSON(){
+    const data = await this.bundle();
+    const blob = new Blob([JSON.stringify(data,null,2)], { type:'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `thesis-assistant-backup-${Date.now()}.json`; a.click();
+  }
+};
+
+8) assets/js/app.js
+const State = {
+  declutter:false,
+  filters:{backlog:true,inprogress:true,blocked:true,done:true},
+  entities:{},
+  project:null
+};
+const Types = { TASK:'task', THEME:'theme', INTEGRATION:'integration', MILESTONE:'milestone', SOURCE:'source', ARTIFACT:'artifact' };
+const Status = { BACKLOG:'backlog', INPROGRESS:'inprogress', BLOCKED:'blocked', DONE:'done' };
+
+const Entities = {
+  async load(){ State.entities = await DB.getEntities() || {}; },
+  async save(e){ State.entities[e.id]=e; await DB.setEntities(State.entities); await Audit.log('upsert', e); UI.refresh(); },
+  async remove(id){ const e=State.entities[id]; delete State.entities[id]; await DB.setEntities(State.entities); await Audit.log('delete', e); UI.refresh(); },
+  byProject(pid){ return Object.values(State.entities).filter(e=>e.projectId===pid && !e.archived); },
+  linkedTo(id, kind){ return Object.values(State.entities).filter(e=> (e[kind+'Ids']||[]).includes(id)); }
+};
+
+const Projects = {
+  async load(){ State.projects = await DB.getProjects(); },
+  list(){ return State.projects||[]; },
+  async create(title='AI-Powered Writing Assistant'){ const p={ id:uid('prj'), title, createdAt:Date.now() }; const list=await DB.getProjects(); list.push(p); await DB.setProjects(list); return p; },
+  async setActive(id){ Router.setProject(id); State.project = (await DB.getProjects()).find(p=>p.id===id); UI.renderProjects(); UI.refresh(); }
+};
+
+const Sources = {
+  async save(rec){ await Entities.save({ ...rec, type: Types.SOURCE, status: Status.BACKLOG }); },
+  async update(id, patch){ const e=State.entities[id]; await Entities.save({ ...e, ...patch }); }
+};
+
+const Audit = { async log(action, entity){ await DB.addAudit({ id: uid('aud'), action, entityId: entity?.id, entityType: entity?.type, timestamp: Date.now(), diff: entity }); } };
+
+const UI = {
+  els:{},
+  async init(){
+    await DB.init(); Router.restore();
+    const settings = await DB.getSettings(); State.declutter = settings.declutter; State.filters = settings.filters;
+    this.cache(); this.bindGlobal();
+    await Projects.load(); await Entities.load();
+    if(!Router.current.projectId){ const p = await Projects.create('AI-Powered Writing Assistant'); await Projects.setActive(p.id); await this.seed(p.id); }
+    else { await Projects.setActive(Router.current.projectId); }
+    this.attachWorkerEvents();
+    this.refresh();
+  },
+  cache(){
+    this.els.projectList = document.getElementById('project-list');
+    this.els.breadcrumbs = document.getElementById('breadcrumbs');
+    this.els.columns = {
+      backlog: document.getElementById('col-backlog'),
+      inprogress: document.getElementById('col-inprogress'),
+      blocked: document.getElementById('col-blocked'),
+      done: document.getElementById('col-done')
+    };
+    this.els.btnDeclutter = document.getElementById('btn-declutter');
+    this.els.btnNewProject = document.getElementById('btn-new-project');
+    this.els.btnAdd = {
+      theme: document.getElementById('btn-add-theme'),
+      milestone: document.getElementById('btn-add-milestone'),
+      task: document.getElementById('btn-add-task'),
+      source: document.getElementById('btn-add-source'),
+      artifact: document.getElementById('btn-add-artifact')
+    };
+    this.els.filters = {
+      backlog: document.getElementById('filter-backlog'),
+      inprogress: document.getElementById('filter-inprogress'),
+      blocked: document.getElementById('filter-blocked'),
+      done: document.getElementById('filter-done')
+    };
+    this.els.importInput = document.getElementById('import-input');
+    this.els.coverage = document.getElementById('coverage-meter');
+    this.els.stats = document.getElementById('stats');
+    this.tplCard = document.getElementById('tpl-card');
+  },
+  attachWorkerEvents(){
+    Ingest.ensureWorker();
+    Ingest.worker.onmessage = async ({ data })=>{
+      if(!data.success) return console.warn('Ingest error', data.error);
+      const s = State.entities[data.id];
+      await Sources.update(data.id, { ...s, ...data.data, status: Status.INPROGRESS });
+      this.refresh();
+    };
+  },
+  bindGlobal(){
+    this.els.btnDeclutter.addEventListener('click', async ()=>{
+      State.declutter = !State.declutter; this.els.btnDeclutter.setAttribute('aria-pressed', String(State.declutter));
+      const s = await DB.getSettings(); await DB.setSettings({ ...s, declutter: State.declutter }); this.refresh();
+    });
+    this.els.btnNewProject.addEventListener('click', async ()=>{
+      const name = prompt('Project name'); if(!name) return;
+      const p = await Projects.create(name); await Projects.setActive(p.id);
+    });
+    document.getElementById('btn-export').addEventListener('click', ()=>Exporter.downloadJSON());
+    document.getElementById('btn-import').addEventListener('click', ()=>this.els.importInput.click());
+    this.els.importInput.addEventListener('change', async (e)=>{
+      const file = e.target.files; if(!file) return;
+      const json = JSON.parse(await file.text());
+      if(!json?.version) return alert('Invalid bundle');
+      await DB.setProjects(json.projects); await DB.setEntities(json.entities);
+      await DB.setSettings(json.settings); await idbKeyval.set('audit', json.audit||[]);
+      location.reload();
+    });
+    Object.entries(this.els.btnAdd).forEach(([k,btn])=>{
+      btn.addEventListener('click', ()=>UI.addEntity(k));
+    });
+    Object.entries(this.els.filters).forEach(([k,el])=>{
+      el.addEventListener('change', async ()=>{
+        State.filters[k] = el.checked; const s = await DB.getSettings(); await DB.setSettings({ ...s, filters: State.filters }); UI.refresh();
+      });
+    });
+  },
+  async seed(projectId){
+    const base = [
+      { type: Types.THEME, title:'SRL Chatbot for Writing', status: Status.BACKLOG },
+      { type: Types.THEME, title:'PDF-driven Retrieval', status: Status.BACKLOG },
+      { type: Types.THEME, title:'VS Code Agent Integration', status: Status.INPROGRESS },
+      { type: Types.THEME, title:'Model Quantization (PTQ/QAT)', status: Status.BACKLOG },
+      { type: Types.MILESTONE, title:'MVP Chatbot + Citation', status: Status.INPROGRESS },
+      { type: Types.TASK, title:'Set APA 7 citation pipeline', status: Status.BACKLOG },
+      { type: Types.TASK, title:'Implement dependency validation', status: Status.BACKLOG }
+    ];
+    for(const item of base){
+      const id = uid('e');
+      await Entities.save({ id, projectId, ...item, priority:'Med', notes:'', sourceIds:[], artifactIds:[], depIds:[], order:Date.now() });
+    }
+  },
+  renderProjects(){
+    const list = Projects.list();
+    this.els.projectList.innerHTML = '';
+    for(const p of list){
+      const li = document.createElement('li'); li.textContent = p.title; li.dataset.id = p.id;
+      if(State.project?.id===p.id) li.classList.add('active');
+      li.addEventListener('click', ()=>Projects.setActive(p.id));
+      this.els.projectList.appendChild(li);
+    }
+    document.title = `Thesis Assistant – ${State.project?.title||''}`;
+    this.els.breadcrumbs.textContent = State.project?.title||'';
+  },
+  refresh(){
+    const ents = Entities.byProject(State.project?.id);
+    const visible = ents.filter(e=>{
+      if(State.declutter && e.status===Status.DONE) return false;
+      return State.filters[e.status] !== false;
+    });
+    const cols = { backlog:[], inprogress:[], blocked:[], done:[] };
+    visible.forEach(e=> cols[e.status].push(e));
+    Object.entries(this.els.columns).forEach(([status,el])=>{
+      el.innerHTML = '';
+      cols[status].sort((a,b)=>a.order-b.order).forEach(e=> el.appendChild(this.card(e)));
+    });
+    this.renderStats(ents);
+  },
+  card(entity){
+    const node = this.tplCard.content.firstElementChild.cloneNode(true);
+    node.dataset.id = entity.id;
+    node.querySelector('.card-title').value = entity.title||'';
+    node.querySelector('.card-type').value = entity.type;
+    node.querySelector('.card-due').value = entity.dueDate||'';
+    node.querySelector('.card-priority').value = entity.priority||'Med';
+    node.querySelector('.card-notes').value = entity.notes||'';
+    node.querySelector('.card-id').textContent = entity.id;
+    const chk = node.querySelector('.card-done');
+    chk.checked = entity.status===Status.DONE;
+    chk.addEventListener('change', async ()=>{
+      const deps = entity.depIds||[];
+      const unmet = deps.filter(id=> (State.entities[id]?.status)!==Status.DONE);
+      if(unmet.length && chk.checked){
+        chk.checked=false; return alert('Unmet dependencies: '+unmet.join(', '));
+      }
+      await Entities.save({ ...entity, status: chk.checked?Status.DONE:Status.BACKLOG });
+    });
+    node.querySelector('.card-title').addEventListener('input', debounce(async (e)=>{
+      await Entities.save({ ...entity, title: e.target.value });
+    }, 250));
+    node.querySelector('.card-type').addEventListener('change', async (e)=>{
+      await Entities.save({ ...entity, type: e.target.value });
+    });
+    node.querySelector('.card-due').addEventListener('change', async e=>{
+      await Entities.save({ ...entity, dueDate: e.target.value });
+    });
+    node.querySelector('.card-priority').addEventListener('change', async e=>{
+      await Entities.save({ ...entity, priority: e.target.value });
+    });
+    node.querySelector('.card-notes').addEventListener('input', debounce(async e=>{
+      await Entities.save({ ...entity, notes: e.target.value });
+    }, 300));
+    node.querySelector('[data-action="archive"]').addEventListener('click', async ()=>{
+      await Entities.save({ ...entity, archived:true });
+    });
+    node.querySelector('[data-action="delete"]').addEventListener('click', async ()=>{
+      if(confirm('Delete permanently?')) await Entities.remove(entity.id);
+    });
+    node.querySelector('[data-action="edit"]').addEventListener('click', ()=>UI.openDetail(entity.id));
+    node.addEventListener('dragstart', e=>{ e.dataTransfer.setData('text/plain', entity.id); node.setAttribute('aria-grabbed','true'); });
+    node.addEventListener('dragend', ()=> node.setAttribute('aria-grabbed','false'));
+    Object.values(UI.els.columns).forEach(col=>{
+      col.ondragover = ev=> ev.preventDefault();
+      col.ondrop = async ev=>{
+        ev.preventDefault();
+        const id = ev.dataTransfer.getData('text/plain');
+        const item = State.entities[id];
+        const status = col.parentElement.dataset.status;
+        await Entities.save({ ...item, status, order: Date.now() });
+      };
+    });
+    const renderChips = (ids, containerSel) => {
+      const cont = node.querySelector(containerSel); cont.innerHTML='';
+      (ids||[]).forEach(id=>{
+        const span = document.createElement('span'); span.className='chip'; span.textContent = State.entities[id]?.title||id;
+        cont.appendChild(span);
+      });
+    };
+    renderChips(entity.sourceIds, '.chips.sources');
+    renderChips(entity.artifactIds, '.chips.artifacts');
+    renderChips(entity.depIds, '.chips.deps');
+    return node;
+  },
+  async openDetail(id){
+    const e = State.entities[id]; const panel = document.getElementById('detail'); panel.hidden=false;
+    panel.innerHTML = `
+      
+        ${e.title||''}
+        Close
+      
+      
+        
+          
+            Type
+            
+              Task
+              Theme
+              Integration
+              Milestone
+              Source
+              Artifact
+            
+          
+          
+            Due
+            
+          
+          
+            Priority
+            LowMedHighCrit
+          
+        
+        
+          Notes
+          
+        
+        
+          
+            Sources
+            
+            
+            Add Source
+          
+          
+            Artifacts
+            
+            New Artifact
+          
+          
+            Dependencies
+            
+            Add Dependency
+          
+        
+        
+          Audit Log
+          
+        
+      
+    `;
+    panel.querySelector('#detail-type').value = e.type;
+    panel.querySelector('#detail-due').value = e.dueDate||'';
+    panel.querySelector('#detail-priority').value = e.priority||'Med';
+    panel.querySelector('#detail-notes').value = e.notes||'';
+    panel.querySelector('#detail-close').onclick = ()=> panel.hidden=true;
+    panel.querySelector('#detail-title').addEventListener('input', debounce(async ev=>{
+      await Entities.save({ ...e, title: ev.target.textContent });
+    }, 300));
+    panel.querySelector('#detail-type').addEventListener('change', async ev=>{
+      await Entities.save({ ...e, type: ev.target.value });
+    });
+    panel.querySelector('#detail-due').addEventListener('change', async ev=>{
+      await Entities.save({ ...e, dueDate: ev.target.value });
+    });
+    panel.querySelector('#detail-priority').addEventListener('change', async ev=>{
+      await Entities.save({ ...e, priority: ev.target.value });
+    });
+    panel.querySelector('#detail-notes').addEventListener('input', debounce(async ev=>{
+      await Entities.save({ ...e, notes: ev.target.value });
+    }, 300));
+    panel.querySelector('#btn-link-source').onclick = async ()=>{
+      const url = panel.querySelector('#add-source-url').value.trim();
+      if(!url) return;
+      await Ingest.addSource(State.project.id, url);
+    };
+    const urlInput = panel.querySelector('#add-source-url');
+    urlInput.addEventListener('dragover', ev=>ev.preventDefault());
+    urlInput.addEventListener('drop', async ev=>{
+      ev.preventDefault(); const f=ev.dataTransfer.files?.; if(!f) return;
+      await Ingest.addSource(State.project.id, f);
+    });
+    const audit = (await DB.getAudit()).filter(a=>a.entityId===e.id).slice(-50);
+    panel.querySelector('#detail-audit').innerHTML = audit.map(a=>`${new Date(a.timestamp).toLocaleString()} ${a.action}`).join('');
+    const renderChipList = (ids, mount) => {
+      mount.innerHTML='';
+      (ids||[]).forEach(id=>{
+        const s = State.entities[id]; const span=document.createElement('span'); span.className='chip'; span.textContent=s?.title||id; mount.appendChild(span);
+      });
+    };
+    renderChipList(e.sourceIds, panel.querySelector('#detail-sources'));
+    renderChipList(e.artifactIds, panel.querySelector('#detail-artifacts'));
+    renderChipList(e.depIds, panel.querySelector('#detail-deps'));
+  },
+  async addEntity(kind){
+    const entity = { id: uid('e'), projectId: State.project.id, type: {
+      theme: Types.THEME, milestone: Types.MILESTONE, task: Types.TASK, source: Types.SOURCE, artifact: Types.ARTIFACT
+    }[kind], title: `New ${kind}`, status: Status.BACKLOG, priority:'Med', order: Date.now(), notes:'', sourceIds:[], artifactIds:[], depIds:[] };
+    await Entities.save(entity);
+  },
+  renderStats(ents){
+    const tasks = ents.filter(e=>e.type===Types.TASK);
+    const covered = tasks.filter(t=> (t.sourceIds?.length||0) > 0 && (t.artifactIds?.length||0) > 0);
+    const coverage = tasks.length? covered.length / tasks.length : 0;
+    this.els.coverage.textContent = `Coverage: ${fmtPct(coverage)}`;
+    this.els.stats.innerHTML = `Items: ${ents.length} -  Tasks: ${tasks.length} -  Themes: ${ents.filter(e=>e.type===Types.THEME).length}`;
+  }
+};
+window.addEventListener('DOMContentLoaded', ()=>UI.init());
+
+9) assets/js/vendor/idb-keyval.min.js
+/*! Placeholder for idb-keyval. Replace with UMD build if needed. */
+const idbKeyval={_m:new Map(),get:async k=>idbKeyval._m.get(k),set:async(k,v)=>idbKeyval._m.set(k,v),del:async k=>idbKeyval._m.delete(k)};
+
+10) assets/workers/ingestWorker.js
+self.onmessage = async (e)=>{
+  const { action, sourceId, input } = e.data;
+  if(action!=='ingest') return;
+  try{
+    let payload = { id: sourceId, success: true, data:{} };
+    if(typeof input === 'string' && input.startsWith('http')){
+      const res = await fetch(input, { mode:'cors' });
+      const html = await res.text();
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const title = doc.querySelector('title')?.textContent?.trim() || input;
+      const text = Array.from(doc.querySelectorAll('main,article,p,li')).map(n=>n.textContent.trim()).join('\n').slice(0,200000);
+      payload.data = { type:'url', url:input, title, text, meta:{ og: { title: doc.querySelector('meta[property="og:title"]')?.content||'' } } };
+    } else if(input && input.type==='application/pdf'){
+      const arr = await input.arrayBuffer();
+      const text = `PDF bytes length: ${arr.byteLength}. For full extraction, integrate PDF.js.`;
+      payload.data = { type:'pdf', url:null, title:input.name, text, meta:{ mime: input.type, size: input.size } };
+    } else {
+      payload = { id: sourceId, success:false, error:'Unsupported input' };
+    }
+    self.postMessage(payload);
+  }catch(err){
+    self.postMessage({ id: sourceId, success:false, error:String(err) });
+  }
+};
+
+11) assets/schema/backup.schema.json
+{
+  "$schema":"http://json-schema.org/draft-07/schema#",
+  "title":"ThesisAssistantBundle",
+  "type":"object",
+  "required":["version","projects","entities","audit","settings"],
+  "properties":{
+    "version":{"type":"string"},
+    "projects":{"type":"array","items":{"type":"object"}},
+    "entities":{"type":"object"},
+    "audit":{"type":"array","items":{"type":"object"}},
+    "settings":{"type":"object"}
+  }
+}
+
+After upload
+- Commit to main.
+- Wait ~30–60 seconds.
+- Load your Pages URL and you should see the full UI:
+  - Add Theme/Milestone/Task/Source/Artifact buttons active
+  - Four columns
+  - Declutter toggle
+  - Detail panel opens on Edit
+  - Import/Export JSON backup
+
+Tell me when the commit finishes and I’ll smoke-test behaviors with you.
+
+[1] https://github.com/usernameisneo/thesis-assistant/upload/main
