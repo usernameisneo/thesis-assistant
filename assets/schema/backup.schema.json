@@ -1,0 +1,160 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Thesis Assistant Backup Schema",
+  "description": "Schema for thesis assistant application backup data",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Backup format version",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Backup creation timestamp"
+    },
+    "user": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "User identifier"
+        },
+        "preferences": {
+          "type": "object",
+          "properties": {
+            "theme": {
+              "type": "string",
+              "enum": ["light", "dark", "auto"]
+            },
+            "language": {
+              "type": "string",
+              "description": "User interface language"
+            },
+            "autoSave": {
+              "type": "boolean",
+              "description": "Auto-save preference"
+            }
+          }
+        }
+      },
+      "required": ["id"]
+    },
+    "projects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Project identifier"
+          },
+          "title": {
+            "type": "string",
+            "description": "Project title"
+          },
+          "description": {
+            "type": "string",
+            "description": "Project description"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "documents": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "content": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": ["chapter", "section", "bibliography", "appendix", "note"]
+                },
+                "metadata": {
+                  "type": "object",
+                  "properties": {
+                    "wordCount": {
+                      "type": "integer"
+                    },
+                    "lastModified": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              },
+              "required": ["id", "name", "content", "type"]
+            }
+          },
+          "bibliography": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "authors": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "year": {
+                  "type": "integer"
+                },
+                "source": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              },
+              "required": ["id", "title", "authors"]
+            }
+          }
+        },
+        "required": ["id", "title", "createdAt"]
+      }
+    },
+    "settings": {
+      "type": "object",
+      "properties": {
+        "citationStyle": {
+          "type": "string",
+          "enum": ["APA", "MLA", "Chicago", "Harvard"]
+        },
+        "documentFormat": {
+          "type": "string",
+          "enum": ["docx", "pdf", "latex"]
+        },
+        "backupEnabled": {
+          "type": "boolean"
+        },
+        "backupFrequency": {
+          "type": "string",
+          "enum": ["daily", "weekly", "monthly"]
+        }
+      }
+    }
+  },
+  "required": ["version", "timestamp", "user", "projects"]
+}
